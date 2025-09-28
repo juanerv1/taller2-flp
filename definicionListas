@@ -4,15 +4,15 @@
 ;JUAN PABLO CHARRY -
 ;
 
-;PUNTO1
-; Gramática BNF para notación prefija polaca
-; <prefix-expr> ::= (prefix-list <expr>)
-; <expr> ::= <const-exp> | <add-exp> | <diff-exp> | <mult-exp> | <div-exp>
-; <const-exp> ::= (const-exp number)
-; <add-exp> ::= (add-exp <expr> <expr>)
-; <diff-exp> ::= (diff-exp <expr> <expr>)
-; <mult-exp> ::= (mult-exp <expr> <expr>)
-; <div-exp> ::= (div-exp <expr> <expr>)
+; GRAMÁTICA BNF FORMAL
+; <prefix-program> ::= <prefix-expr>
+; <prefix-expr>   ::= (prefix-list <expr>)
+; <expr>         ::= <const-exp> | <add-exp> | <diff-exp> | <mult-exp> | <div-exp>
+; <const-exp>    ::= (const-exp <number>)
+; <add-exp>      ::= (add-exp <expr> <expr>)
+; <diff-exp>     ::= (diff-exp <expr> <expr>)
+; <mult-exp>     ::= (mult-exp <expr> <expr>)
+; <div-exp>      ::= (div-exp <expr> <expr>)
 
 ;LISTAS
 ;DEFINICIONES
@@ -157,21 +157,6 @@
     (mult-exp-ls
      (const-exp-ls 9)
      (const-exp-ls 10)))))
-
-;DATATYPES
-; Gramática BNF mejorada:
-; <prefix-not>   ::= (prefix-list <prefix-exp>)
-; <prefix-exp>   ::= <const-exp>
-;                 |  <add-exp>
-;                 |  <diff-exp>
-;                 |  <mult-exp>
-;                 |  <div-exp>
-;
-; <const-exp>    ::= (const-exp <number>)
-; <add-exp>      ::= (add-exp <prefix-exp> <prefix-exp>)
-; <diff-exp>     ::= (diff-exp <prefix-exp> <prefix-exp>)
-; <mult-exp>     ::= (mult-exp <prefix-exp> <prefix-exp>)
-; <div-exp>      ::= (div-exp <prefix-exp> <prefix-exp>)
 
 (define-datatype prefix-exp prefix-exp?
   (const-exp (value number?))
