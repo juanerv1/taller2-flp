@@ -1,0 +1,185 @@
+#lang eopl
+;INTEGRANTES
+;JUAN ESTEBAN RODRIGUEZ VALENCIA - 2042282
+;JUAN PABLO CHARRY -
+;
+
+;PUNTO1
+; Gramática BNF para notación prefija polaca
+; <prefix-expr> ::= (prefix-list <expr>)
+; <expr> ::= <const-exp> | <add-exp> | <diff-exp> | <mult-exp> | <div-exp>
+; <const-exp> ::= (const-exp number)
+; <add-exp> ::= (add-exp <expr> <expr>)
+; <diff-exp> ::= (diff-exp <expr> <expr>)
+; <mult-exp> ::= (mult-exp <expr> <expr>)
+; <div-exp> ::= (div-exp <expr> <expr>)
+
+;LISTAS
+;DEFINICIONES
+
+(define prefix-list
+  (lambda (e) (list 'prefix-list e)))
+
+(define const-exp
+  (lambda (n) (list 'const-exp n)))
+
+(define add-exp
+  (lambda (e1 e2) (list 'add-exp e1 e2)))
+
+(define diff-exp
+  (lambda (e1 e2) (list 'diff-exp e1 e2)))
+
+(define mult-exp
+  (lambda (e1 e2) (list 'mult-exp e1 e2)))
+
+(define div-exp
+  (lambda (e1 e2) (list 'div-exp e1 e2)))
+
+;PREDICADOS
+
+(define prefix-list?
+  (lambda (e)
+    (and (pair? e) (eqv? (car e) 'prefix-list))))
+
+(define const-exp?
+  (lambda (e)
+    (and (pair? e) (eqv? (car e) 'const-exp))))
+
+(define add-exp?
+  (lambda (e)
+    (and (pair? e) (eqv? (car e) 'add-exp))))
+
+(define diff-exp?
+  (lambda (e)
+    (and (pair? e) (eqv? (car e) 'diff-exp))))
+
+(define mult-exp?
+  (lambda (e)
+    (and (pair? e) (eqv? (car e) 'mult-exp))))
+
+(define div-exp?
+  (lambda (e)
+    (and (pair? e) (eqv? (car e) 'div-exp))))
+
+;EXTRACTORES
+
+(define prefix-list->expr
+  (lambda (e)
+    (if (prefix-list? e)
+        (cadr e)
+        (eopl:error 'prefix-list->expr "No es un prefix-list: ~s" e))))
+
+; Extractores para const-exp
+(define const-exp->value
+  (lambda (e)
+    (if (const-exp? e)
+        (cadr e)
+        (eopl:error 'const-exp->value "No es una const-exp: ~s" e))))
+
+; Extractores para add-exp
+(define add-exp->e1
+  (lambda (e)
+    (if (add-exp? e)
+        (cadr e)
+        (eopl:error 'add-exp->left "No es una add-exp: ~s" e))))
+
+(define add-exp->e2
+  (lambda (e)
+    (if (add-exp? e)
+        (caddr e)
+        (eopl:error 'add-exp->right "No es una add-exp: ~s" e))))
+
+; Extractores para diff-exp
+(define diff-exp->e1
+  (lambda (e)
+    (if (diff-exp? e)
+        (cadr e)
+        (eopl:error 'diff-exp->left "No es una diff-exp: ~s" e))))
+
+(define diff-exp->e2
+  (lambda (e)
+    (if (diff-exp? e)
+        (caddr e)
+        (eopl:error 'diff-exp->right "No es una diff-exp: ~s" e))))
+
+; Extractores para mult-exp
+(define mult-exp->e1
+  (lambda (e)
+    (if (mult-exp? e)
+        (cadr e)
+        (eopl:error 'mult-exp->left "No es una mult-exp: ~s" e))))
+
+(define mult-exp->e2
+  (lambda (e)
+    (if (mult-exp? e)
+        (caddr e)
+        (eopl:error 'mult-exp->right "No es una mult-exp: ~s" e))))
+
+; Extractores para div-exp
+(define div-exp->e1
+  (lambda (e)
+    (if (div-exp? e)
+        (cadr e)
+        (eopl:error 'div-exp->left "No es una div-exp: ~s" e))))
+
+(define div-exp->e2
+  (lambda (e)
+    (if (div-exp? e)
+        (caddr e)
+        (eopl:error 'div-exp->right "No es una div-exp: ~s" e))))
+
+
+;EVALUACION
+(define (eval-prefix exp)
+  (cond
+    [(prefix-list? exp) 
+     (eval-prefix (prefix-list->expr exp))]  ; Extrae la expresión interior y evalúa
+    
+    [(const-exp? exp) 
+     (const-exp->value exp)]
+    
+    [(add-exp? exp) 
+     (+ (eval-prefix (add-exp->e1 exp)) 
+        (eval-prefix (add-exp->e2 exp)))]
+    
+    [(diff-exp? exp) 
+     (- (eval-prefix (diff-exp->e1 exp)) 
+        (eval-prefix (diff-exp->e2 exp)))]
+    
+    [(mult-exp? exp) 
+     (* (eval-prefix (mult-exp->e1 exp)) 
+        (eval-prefix (mult-exp->e2 exp)))]
+    
+    [(div-exp? exp)  
+     (/ (eval-prefix (div-exp->e1 exp)) 
+        (eval-prefix (div-exp->e2 exp)))]
+    
+    [else (eopl:error 'eval-prefix "Expresion desconocida" exp)]))
+
+
+
+;DATATYPES
+; Gramática BNF mejorada:
+; <prefix-not>   ::= (prefix-list <prefix-exp>)
+; <prefix-exp>   ::= <const-exp>
+;                 |  <add-exp>
+;                 |  <diff-exp>
+;                 |  <mult-exp>
+;                 |  <div-exp>
+;
+; <const-exp>    ::= (const-exp <number>)
+; <add-exp>      ::= (add-exp <prefix-exp> <prefix-exp>)
+; <diff-exp>     ::= (diff-exp <prefix-exp> <prefix-exp>)
+; <mult-exp>     ::= (mult-exp <prefix-exp> <prefix-exp>)
+; <div-exp>      ::= (div-exp <prefix-exp> <prefix-exp>)
+
+(define-datatype prefix-expr-dt prefix-expr-dt?
+  (const-expr-dt (value number?))
+  (add-expr-dt   (e1 prefix-expr-dt?) (e2 prefix-expr-dt?))
+  (diff-expr-dt  (e1 prefix-expr-dt?) (e2 prefix-expr-dt?))
+  (mult-expr-dt  (e1 prefix-expr-dt?) (e2 prefix-expr-dt?))
+  (div-expr-dt   (e1 prefix-expr-dt?) (e2 prefix-expr-dt?)))
+
+(define-datatype prefix-list-wrapper-dt prefix-list-wrapper-dt?
+  (prefix-wrapper-dt (expr prefix-expr-dt?)))
+
