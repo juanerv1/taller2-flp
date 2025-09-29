@@ -1,7 +1,7 @@
 #lang eopl
 ;INTEGRANTES
 ;JUAN ESTEBAN RODRIGUEZ VALENCIA - 2042282
-;JUAN PABLO CHARRY -
+;JUAN PABLO CHARRY RAMIREZ - 2040579
 ;
 
 ; GRAMÁTICA BNF FORMAL
@@ -196,3 +196,100 @@
     (mult-exp
      (const-exp 9)
      (const-exp 10)))))
+
+; =============================================
+; PUNTO 2.2: FUNCIONES PARSE Y UNPARSE
+; =============================================
+
+; Gramática utilizada para el parsing/unparsing:
+; <input> ::= <prefix-expr>
+; <prefix-expr> ::= <number>
+;                 | ('+ <prefix-expr> <prefix-expr>)
+;                 | ('- <prefix-expr> <prefix-expr>)  
+;                 | ('* <prefix-expr> <prefix-expr>)
+;                 | ('/ <prefix-expr> <prefix-expr>)
+
+; ---------------------------------------------------------------------
+; FUNCIÓN: PARSEBNF
+; ---------------------------------------------------------------------
+; Propósito: Convertir una lista con notación polaca a un árbol de sintaxis abstracta (datatype)
+; Entrada: lista con expresión en notación polaca (ej: '(* (+ 3 2) (/ 4 (- 12 8))))
+; Salida: estructura de datatype prefix-list
+; Ejemplos:
+;   (PARSEBNF '(* (+ 3 2) (/ 4 (- 12 8)))) 
+;   => #(struct:prefix-list
+;  #(struct:mult-exp #(struct:add-exp #(struct:const-exp 3) #(struct:const-exp 2)) #(struct:div-exp #(struct:const-exp 4)
+;  #(struct:diff-exp #(struct:const-exp 12) #(struct:const-exp 8)))))
+
+;   
+;   (PARSEBNF '(* 8 8))
+;   => #(struct:prefix-list #(struct:mult-exp #(struct:const-exp 8) #(struct:const-exp 8)))
+
+(define PARSEBNF
+  (lambda (input-list)
+    (prefix-list (PARSEBNF-helper input-list))))
+
+; ---------------------------------------------------------------------
+; FUNCIÓN AUXILIAR: PARSEBNF-helper
+; ---------------------------------------------------------------------
+; Propósito: Función recursiva auxiliar que procesa expresiones prefijas y construye el AST
+; Entrada: expresión en notación polaca (número o lista)
+; Salida: estructura prefix-exp
+; Ejemplos:
+;   (PARSEBNF-helper 5) => #(struct:const-exp 5)
+;   (PARSEBNF-helper '(+ 3 2)) => #(struct:add-exp #(struct:const-exp 3) #(struct:const-exp 2))
+
+(define PARSEBNF-helper
+  (lambda (expr)
+    (cond
+      [(number? expr) (const-exp expr)]
+      [(and (list? expr) (eqv? (car expr) '+))
+       (add-exp (PARSEBNF-helper (cadr expr)) (PARSEBNF-helper (caddr expr)))]
+      [(and (list? expr) (eqv? (car expr) '-))
+       (diff-exp (PARSEBNF-helper (cadr expr)) (PARSEBNF-helper (caddr expr)))]
+      [(and (list? expr) (eqv? (car expr) '*))
+       (mult-exp (PARSEBNF-helper (cadr expr)) (PARSEBNF-helper (caddr expr)))]
+      [(and (list? expr) (eqv? (car expr) '/))
+       (div-exp (PARSEBNF-helper (cadr expr)) (PARSEBNF-helper (caddr expr)))]
+      [else (eopl:error 'PARSEBNF-helper "Expresión no válida: ~s" expr)])))
+
+; ---------------------------------------------------------------------
+; FUNCIÓN: UNPARSEBNF  
+; ---------------------------------------------------------------------
+; Propósito: Convertir un árbol de sintaxis abstracta (datatype) a lista con notación polaca
+; Entrada: estructura de datatype prefix-list
+; Salida: lista con expresión en notación polaca
+; Ejemplos:
+;   (UNPARSEBNF exp-dt-1) 
+;   => '(* (+ 3 2) (/ 4 (- 12 8)))
+;   
+;   (UNPARSEBNF exp-dt-2)
+;   => '(* 8 8)
+
+(define UNPARSEBNF
+  (lambda (ast)
+    (cases prefix-list- ast
+      (prefix-list (expr) (UNPARSEBNF-helper expr)))))
+
+; ---------------------------------------------------------------------
+; FUNCIÓN AUXILIAR: UNPARSEBNF-helper
+; ---------------------------------------------------------------------
+; Propósito: Función recursiva auxiliar que recorre el AST y reconstruye la notación polaca
+; Entrada: estructura prefix-exp
+; Salida: expresión en notación polaca (número o lista)
+; Ejemplos:
+;   (UNPARSEBNF-helper (const-exp 5)) => 5
+;   (UNPARSEBNF-helper (add-exp (const-exp 3) (const-exp 2))) => '(+ 3 2)
+
+(define UNPARSEBNF-helper
+  (lambda (expr)
+    (cases prefix-exp expr
+      [const-exp (value) value]
+      [add-exp (e1 e2) 
+       (list '+ (UNPARSEBNF-helper e1) (UNPARSEBNF-helper e2))]
+      [diff-exp (e1 e2)
+       (list '- (UNPARSEBNF-helper e1) (UNPARSEBNF-helper e2))]
+      [mult-exp (e1 e2)
+       (list '* (UNPARSEBNF-helper e1) (UNPARSEBNF-helper e2))]
+      [div-exp (e1 e2)
+       (list '/ (UNPARSEBNF-helper e1) (UNPARSEBNF-helper e2))])))
