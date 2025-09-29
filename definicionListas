@@ -293,3 +293,97 @@
        (list '* (UNPARSEBNF-helper e1) (UNPARSEBNF-helper e2))]
       [div-exp (e1 e2)
        (list '/ (UNPARSEBNF-helper e1) (UNPARSEBNF-helper e2))])))
+
+;; ==========================================
+;; Ejercicio 3 - evaluate-exp (versión con listas)
+;; ==========================================
+;; 
+;; ...
+;;
+;; Gramática:
+;; <exp> ::= <num>
+;;        | (+ <exp> <exp>)
+;;        | (- <exp> <exp>)
+;;        | (* <exp> <exp>)
+;;        | (/ <exp> <exp>)
+
+;; Función: evaluate-exp
+;; Recibe una expresión en notación polaca (listas)
+;; Devuelve el valor numérico evaluado de manera recursiva.
+
+(define (evaluate-exp exp)
+  (cond
+    ;; Caso base: número
+    [(number? exp) exp]
+
+    ;; Caso suma
+    [(and (list? exp) (eq? (car exp) '+))
+     (+ (evaluate-exp (cadr exp))
+        (evaluate-exp (caddr exp)))]
+
+    ;; Caso resta
+    [(and (list? exp) (eq? (car exp) '-))
+     (- (evaluate-exp (cadr exp))
+        (evaluate-exp (caddr exp)))]
+
+    ;; Caso multiplicación
+    [(and (list? exp) (eq? (car exp) '*))
+     (* (evaluate-exp (cadr exp))
+        (evaluate-exp (caddr exp)))]
+
+    ;; Caso división
+    [(and (list? exp) (eq? (car exp) '/))
+     (/ (evaluate-exp (cadr exp))
+        (evaluate-exp (caddr exp)))]
+
+    ;; Caso por defecto
+    [else (eopl:error 'evaluate-exp "expresión inválida: ~s" exp)]))
+
+
+;; ==========================================
+;; Defino mi propio displayln en EOPL
+;; ==========================================
+(define (displayln x)
+  (display x)
+  (newline))
+
+;; ==========================================
+;; PRUEBAS
+;; ==========================================
+(displayln (evaluate-exp '(* (+ 3 2) (/ 4 (- 12 8))))) ; → 5
+(displayln (evaluate-exp '(+ 10 (* 2 3))))             ; → 16
+
+(displayln (evaluate-exp '(- (* 5 2) 3)))        ; → 7
+(displayln (evaluate-exp '(/ (+ 8 4) 2)))        ; → 6
+
+;; ============================
+;; 2. Versión con datatypes
+;; ============================
+
+(define (evaluate-exp-dt e)
+  (cases prefix-exp e
+    (const-exp (n) n)
+    (add-exp (e1 e2) (+ (evaluate-exp-dt e1)
+                        (evaluate-exp-dt e2)))
+    (diff-exp (e1 e2) (- (evaluate-exp-dt e1)
+                         (evaluate-exp-dt e2)))
+    (mult-exp (e1 e2) (* (evaluate-exp-dt e1)
+                         (evaluate-exp-dt e2)))
+    (div-exp (e1 e2) (/ (evaluate-exp-dt e1)
+                        (evaluate-exp-dt e2)))))
+
+;; Ejemplos con datatypes
+(define ejemplo1
+  (mult-exp
+   (add-exp (const-exp 3) (const-exp 2))
+   (div-exp (const-exp 4)
+            (diff-exp (const-exp 12) (const-exp 8)))))
+
+(define ejemplo2
+  (add-exp (const-exp 10)
+           (mult-exp (const-exp 2) (const-exp 3))))
+
+(display (evaluate-exp-dt ejemplo1))  ; imprime 5
+(newline)
+(display (evaluate-exp-dt ejemplo2))  ; imprime 16
+(newline)
